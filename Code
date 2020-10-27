@@ -1,0 +1,92 @@
+#include <LiquidCrystal.h>
+
+//for LCD use
+#define RS 12
+#define E 11
+#define DB4 5
+#define DB5 4
+#define DB6 3
+#define DB7 2
+
+#define PIR_IN 6 //input sensor (bottom)
+#define PIR_OU 9 //output sensor (top)
+#define BUZ 10 //piezo
+
+#define MAXP 25 //maximum allowed inside
+int tot=0; //holds the number of clients, de facto
+int res=0; //calling the sensor functions
+int red=8; 
+int green=7;
+
+LiquidCrystal lcd(RS, E, DB4, DB5, DB6, DB7);
+
+void setup(){
+    lcd.begin(16, 2);
+  	pinMode(PIR_IN, INPUT);
+  	pinMode(PIR_OU, INPUT);
+  	pinMode(red, OUTPUT);
+  	pinMode(green, OUTPUT);
+  	led_green();
+  	pinMode(BUZ, OUTPUT);
+  
+    lcd.print("MAX PERMITIDO:");
+  	lcd.setCursor(14,0);
+  	lcd.print(MAXP);
+ 	lcd.setCursor(6,1);
+  	lcd.print(tot);
+}
+
+void loop(){
+  	lcd.setCursor(0,1);
+    lcd.print("ATUAL:");
+    res = increase() - decrease();
+    delay(100);
+	if (digitalRead(PIR_IN)==1 && tot>MAXP){ //someone got in even being crowded
+      do{ //the piezo it's activated
+        tone(BUZ, 200, 500);
+        delay(350);
+        tone(BUZ, 400, 500);
+        delay(350);
+        tone(BUZ, 200, 500);
+        delay(350);
+        delay(1000);
+      }while(digitalRead(PIR_OU)==0); //until someone leaves
+  }
+}
+
+void led_green(){
+	digitalWrite(green, HIGH);
+    delay(100);
+  	digitalWrite(red, LOW);
+    delay(100);
+}
+
+void led_red(){
+	digitalWrite(green, LOW);
+    delay(100);
+  	digitalWrite(red, HIGH);
+    delay(100);
+}
+
+int increase(){ //input sensor function
+    if(digitalRead(PIR_IN)){
+		tot++;
+      	lcd.print(tot);
+      	delay(700);
+    }if (tot>=MAXP){ //turn red if the maximum has been reached
+    	led_red();
+    }else{
+      	led_green();
+    }
+  	return tot;
+}
+
+int decrease(){ //output sensor function
+    if(digitalRead(PIR_OU)==1 && tot>0){
+		tot--;
+      	lcd.print(tot);
+      	lcd.print(" ");
+      	delay(700);
+    }
+  	return tot;
+}
